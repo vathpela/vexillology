@@ -1,0 +1,2 @@
+#!/bin/sh
+sudo /usr/local/bin/luxafor -b 255 color

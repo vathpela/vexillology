@@ -1,0 +1,3 @@
+#!/bin/sh
+#sudo /usr/local/bin/luxafor -g 255 color
+sudo /usr/local/bin/luxafor -w 2 -r 0 -g 255 -b 0 -s 10 wave
