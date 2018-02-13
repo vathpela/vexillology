@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+""" This reads from the powermate's input and runs programs as a result """
+
+# pylint: disable=fixme
+
 # XXX: this will eventually become a daemon in C
 
 import os
@@ -7,6 +11,7 @@ import asyncore
 import evdev
 
 class InputDeviceDispatcher(asyncore.file_dispatcher):
+    """ Listen for an input event and do stuff """
     def __init__(self, device):
         self.device = device
         self.last_code = 0
@@ -15,11 +20,13 @@ class InputDeviceDispatcher(asyncore.file_dispatcher):
         asyncore.file_dispatcher.__init__(self, device)
 
     def save_last(self, event):
+        """ maintain our state """
         self.last_code = event.code
         self.last_type = event.type
         self.last_value = event.value
 
-    def recv(self, ign=None):
+    def recv(self, _=None):
+        """ receive from the device """
         return self.device.read()
 
     def handle_read(self):
@@ -29,21 +36,23 @@ class InputDeviceDispatcher(asyncore.file_dispatcher):
                 continue
 
             # if the current event matches the most recent event, skip
-            if event.code == self.last_code and event.type == self.last_type and event.value == self.last_value:
+            if event.code == self.last_code and \
+               event.type == self.last_type and \
+               event.value == self.last_value:
                 continue
 
             # take action
             if event.type == 2 and event.code == 7:
                 # knob turned
-                if event.value == -1L:
+                if event.value == -1:
                     # left
                     os.system("/home/dcantrel/bin/flag-open")
                     self.save_last(event)
-                elif event.value == 1L:
+                elif event.value == 1:
                     # right
                     os.system("/home/dcantrel/bin/flag-dnd")
                     self.save_last(event)
-            elif event.type == 1 and event.code == 256 and event.value == 1L:
+            elif event.type == 1 and event.code == 256 and event.value == 1:
                 # pressed
                 os.system("/home/dcantrel/bin/flag-away")
                 self.save_last(event)
