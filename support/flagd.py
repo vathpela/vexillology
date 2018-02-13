@@ -12,7 +12,8 @@ import evdev
 
 class InputDeviceDispatcher(asyncore.file_dispatcher):
     """ Listen for an input event and do stuff """
-    def __init__(self, device):
+    def __init__(self, name, device):
+        self.name = name
         self.device = device
         self.last_code = 0
         self.last_type = 0
@@ -46,18 +47,19 @@ class InputDeviceDispatcher(asyncore.file_dispatcher):
                 # knob turned
                 if event.value == -1:
                     # left
-                    os.system("/home/dcantrel/bin/flag-open")
+                    os.system("powermate %s left" % (self.name,))
                     self.save_last(event)
                 elif event.value == 1:
                     # right
-                    os.system("/home/dcantrel/bin/flag-dnd")
+                    os.system("powermate %s right" % (self.name,))
                     self.save_last(event)
-            elif event.type == 1 and event.code == 256 and event.value == 1:
+            elif event.type == 1 and event.code == 256:
                 # pressed
-                os.system("/home/dcantrel/bin/flag-away")
+                os.system("powermate %s button %s" % (self.name, event.value))
                 self.save_last(event)
 
 if __name__ == "__main__":
-    powermate = evdev.InputDevice('/dev/powermate')
-    InputDeviceDispatcher(powermate)
+    for dev in filter(lambda x: x.startswith("powermate"), os.listdir("/dev/")):
+        powermate = evdev.InputDevice("/dev/%s" % (dev,))
+        InputDeviceDispatcher(dev, powermate)
     asyncore.loop()
