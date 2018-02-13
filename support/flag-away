@@ -1,2 +1,3 @@
 #!/bin/sh
+# The luxafor command is ../luxafor-python/luxafor-linux.py
 sudo /usr/local/bin/luxafor -b 255 color
