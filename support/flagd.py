@@ -46,12 +46,15 @@ class UdevMonitor:
 
 class PowerMate:
     """ Listen for an input event and do stuff """
-    def __init__(self, name):
+    def __init__(self, name, left_cb=None, right_cb=None, button_cb=None):
         super().__init__()
         self.name = name
         self.device = evdev.InputDevice("/dev/%s" % (name,))
         self.last = None
         self.debug = False
+        self.left_cb = left_cb
+        self.right_cb = right_cb
+        self.button_cb = button_cb
         print("new device %s" % (name,))
 
     def fileno(self):
@@ -73,6 +76,27 @@ class PowerMate:
             else:
                 raise
         return False
+
+    def left(self, event):
+        """ what to do if it's left """
+        if self.left_cb:
+            self.left_cb(self, event)
+        else:
+            os.system("powermate %s left %s" % (self.name, event.value))
+
+    def right(self, event):
+        """ what to do if it's right """
+        if self.right_cb:
+            self.right_cb(self, event)
+        else:
+            os.system("powermate %s right %s" % (self.name, event.value))
+
+    def button(self, event):
+        """ what to do if it's button """
+        if self.button_cb:
+            self.button_cb(self, event)
+        else:
+            os.system("powermate %s button %s" % (self.name, event.value))
 
     def handle_event(self, event):
         """ handle one event """
@@ -96,21 +120,18 @@ class PowerMate:
             # knob turned
             if event.value < 0:
                 # left
-                os.system("powermate %s left %s" % (self.name, event.value))
-                self.save_last(event)
+                self.left(event)
             elif event.value > 0:
                 # right
-                os.system("powermate %s right %s" % (self.name, event.value))
-                self.save_last(event)
+                self.right(event)
         elif event.type == 1 and event.code == 256:
             # pressed
-            os.system("powermate %s button %s" % (self.name, event.value))
-            self.save_last(event)
+            self.button(event)
         else:
             if self.debug:
                 print("powermate %s event: type %s code %s value %s" % (
                     self.name, event.type, event.code, event.value))
-            self.save_last(event)
+        self.save_last(event)
 
 class PowerMateDispatcher():
     """ A dispatcher for our devices """
