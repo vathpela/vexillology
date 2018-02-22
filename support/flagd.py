@@ -175,14 +175,17 @@ class PowerMateDispatcher():
 
     def run(self):
         """ this is our loop... """
+        args = []
         while self.powermates:
-            r, _, _ = select.select(self.filenos, [], [])
+            r, _, _ = select.select(self.filenos, [], [], *args)
             if r:
+                args = [0.1]
                 for fileno in r:
                     self.handle_read(fileno)
             else:
                 for powermate in self.powermates.values():
                     powermate.last = None
+                args = []
 
 if __name__ == "__main__":
     dispatcher = PowerMateDispatcher()
