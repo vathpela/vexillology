@@ -157,22 +157,32 @@ class PowerMateDispatcher():
                 break
 
     @property
-    def rlist(self):
-        """ the rlist for select """
-        return [k for k in self.powermates] + [self.udev_fileno]
+    def filenos(self):
+        """ the filenos for select """
+        return list(self.powermates) + [self.udev_fileno]
+
+    def handle_read(self, fileno):
+        """ handle the read from one of our filenos """
+        if fileno == self.udev_fileno:
+            for device in self.udev.new_devices():
+                self.new_powermate(device)
+        elif fileno in self.powermates:
+            powermate = self.powermates[fileno]
+            if powermate.read():
+                del self.powermates[fileno]
+        else:
+            raise ValueError(fileno)
 
     def run(self):
         """ this is our loop... """
         while self.powermates:
-            r, _, _ = select.select(self.rlist, [], [])
-            for fileno in r:
-                if fileno == self.udev_fileno:
-                    for device in self.udev.new_devices():
-                        self.new_powermate(device)
-                else:
-                    powermate = self.powermates[fileno]
-                    if powermate.read():
-                        del self.powermates[fileno]
+            r, _, _ = select.select(self.filenos, [], [])
+            if r:
+                for fileno in r:
+                    self.handle_read(fileno)
+            else:
+                for powermate in self.powermates.values():
+                    powermate.last = None
 
 if __name__ == "__main__":
     dispatcher = PowerMateDispatcher()
